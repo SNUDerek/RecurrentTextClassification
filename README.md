@@ -14,18 +14,23 @@ NB: this is not designed for amazing efficiency, especially the preprocessing. `
 
 ## FILES:
 `main.py` : main file, run to use
+
 `config.py` : configuration file, edit before using
+
 `evaluate.py`: run to evaluate trained (saved) model on all data
 
 `RNN_intent.py` : CNN-RNN classifier, edit parameters before running
+
 `TFIDF_intent.py` : baseline comparison of TF-IDF classification
+
 `dataset.py` : vectorizes sentences by frequency, creates one-hot classification vectors
+
 `analysis.py` : (to-do) various tools for evaluation and analysis
 
 `brown_corp_generator.py` : generate sample classification data using NLTK
+
 `loadmodel_test.py` : test code for loading saved models
-`evaluate_custom.py` : simulate sentence-level domain classification
-`evaluate_custom_tfidf.py` : simulate sentence-level domain classification
+
 old_code.txt : old code for restoring vocabulary file (before saving implemented)
 
 
