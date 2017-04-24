@@ -4,13 +4,13 @@
 dsh9470@snu.ac.kr
 
 ## HOW TO RUN:
-1. place your sentences and classes text files in the /datasets directory
+1. place your sentences and classes text files in the /datasets directory (use `brown_corp_generator.py` to generate toy data with NLTK)
 2. edit parameters in config.py
 3. run main.py
 4. profit! ...maybe
 
 ## NOTES:
-none at the moment...
+NB: this is not designed for amazing efficiency, especially the preprocessing. `sklearn` preprocessing would help a lot.
 
 ## FILES:
 `main.py` : main file, run to use
@@ -80,7 +80,6 @@ March 17:
 March 23:
 - saving vocabulary *actually* working
 - now all variables in config.py
-- merged with RNN_classifier_domconfig
 
 
 
