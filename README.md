@@ -36,10 +36,15 @@ old_code.txt : old code for restoring vocabulary file (before saving implemented
 
 ## DEFAULT DIRECTORIES:
 /bak : temporary sentence vectors as np arrays (in case of failure)
+
 /datasets : backups for alternate training data (just for storage)
+
 /model : final trained model
+
 /model_data : final vectors for training/test
+
 /logs : tensorflow tensorboard information (not working??)
+
 /temp_models : models saved at each epoch
 
 
