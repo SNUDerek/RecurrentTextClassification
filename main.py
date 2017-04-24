@@ -1,4 +1,4 @@
-import RNN_intent, TFIDF_intent
+import rnn_model, tfidf_model
 import dataset, analysis
 from config import sents_filename, classes_filename, save_path, do_rnn, do_tfidf, \
                    vocab_size, train_percent, data_verbose
@@ -32,7 +32,7 @@ if do_rnn == True:
     dataset.save_txt(class_set, save_path+"class_set.txt")
     dataset.save_txt(vocab, save_path + "vocabulary.txt")
 
-    rnn_model = RNN_intent.classify_rnn(X_train, y_train, X_test, y_test,
+    rnn_model = rnn_model.classify_rnn(X_train, y_train, X_test, y_test,
                                         test_set, test_gold, class_set, vocab_size)
 
 if do_tfidf == True:
@@ -46,5 +46,5 @@ if do_tfidf == True:
                                     max_vocab=vocab_size - 2,
                                     testing=data_verbose)
 
-    tfidf_model = TFIDF_intent.classify_tfidf(X_train, y_train, X_test, y_test,
+    tfidf_model = tfidf_model.classify_tfidf(X_train, y_train, X_test, y_test,
                                               test_set, test_gold, class_set, vocab_size)
