@@ -86,17 +86,6 @@ def onehot_vectorize(lst, num):
     return np.eye(num)[lst]
 
 
-# one-hot vectorize function
-# takes amtrix of integer indices, max number of labels
-def onehot_vectorize_matrix(matrix, num):
-    result = []
-    for vector in matrix:
-        a = one_hot(vector.tolist(), dtype='int', num_labels=num)
-        result.append(a)
-    # print("shape", np.shape(np.array(result)))
-    return np.array(result)
-
-
 # function to return lexicalized morphs from mecab
 # takes sentence as string
 # returns space-separated string of lexicalized morphemes
