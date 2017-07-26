@@ -1,7 +1,6 @@
 import codecs, re, random
 from collections import Counter
 import numpy as np
-from mlxtend.preprocessing import one_hot
 from config import vocab_size as VOCAB_SIZE
 
 
