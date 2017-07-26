@@ -4,7 +4,7 @@
 import csv, codecs
 import numpy as np
 import pandas as pd
-import dataset, analysis
+import dataset
 import tensorflow as tf
 from keras.preprocessing import sequence
 from keras.models import save_model, load_model, model_from_json
@@ -48,7 +48,7 @@ out_sent = []
 
 for i in range(len(predictions)):
     prediction = list(predictions[i])
-    confidence = analysis.max_norm(prediction)
+    confidence = dataset.max_norm(prediction)
     max_idx = prediction.index(max(prediction))
     guess = class_set[max_idx]
     gold = class_set[y_data[i].index(max(y_data[i]))]

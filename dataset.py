@@ -1,301 +1,162 @@
-import codecs, re, random, csv
+import codecs, re, random
 from collections import Counter
 import numpy as np
+from mlxtend.preprocessing import one_hot
+from config import vocab_size as VOCAB_SIZE
 
-# indexes sentences by vocab frequency list
-# reserves 0 for UNKs
 
-# march 14 changes:
-# added train-test splitter for tf-idf that returns text strings, classes as ints
-
-# march 16 changes:
-# shuffle data same for both models
-
-# march 23 changes:
-# save vocabulary file to txt for new decode
-
-# USAGE
-# first get lists like this:
-# sents, classes = dataset.get_lists(sents_filename, classes_filename)
-# then run train-test split like this:
-# train_X, train_y, test_X, test_y, test_set, class_set = \
-#     dataset.get_test_train(sents, classes, trainsize=0.8, max_vocab=50000):
-
-# function to get lists from data
-# takes inputs, classes txt filenames
-# returns lists of sentence token lists, classes
-def get_lists(file_sents, file_classes, testing=0):
-    if testing == 1: print('starting dataset.get_lists()...')
-    f_sents = codecs.open(file_sents, 'rb', encoding='utf8')
-    f_classes = codecs.open(file_classes, 'rb', encoding='utf8')
+# function to get list of strings from data
+# takes corpus as filename
+# returns list of sentence token lists
+def get_lists(file_corpus, testing=0):
+    if testing == 1:
+        print('starting dataset.get_lists()...')
+    f_corpus = codecs.open(file_corpus, 'rb', encoding='utf8')
     sents = []
-    classes = []
-    for line in f_sents:
-        sents.append(line.strip('\n').split(' '))
-    if testing == 1: print('sentences read...')
-    for line in f_classes:
-        classes.append(line.strip('\n'))
-    if testing == 1: print('classes read...')
-    return(sents, classes)
 
-# function to get vocab, maxvocab
-# takes list : sents
-def get_vocab(sents, testing=0):
-    if testing == 1: print('starting dataset.get_vocab()...')
+    for line in f_corpus:
+        sents.append(line.strip('\n'))
+
+    return(sents)
+
+
+# function to get vocab and inverse vocab
+# adds UNK and PAD
+# takes list : sents, max vocab #, stoplist
+def get_vocab(sents, maxvocab, stoplist=[], testing=0):
     # get vocab list
     vocab = []
     for sent in sents:
-        for word in sent:
+        sentlst = sent.split(' ')
+        for word in sentlst:
             vocab.append(word)
 
     counts = Counter(vocab) # get counts of each word
     vocab_set = list(set(vocab)) # get unique vocab list
-    sorted_vocab = sorted(vocab_set, key=lambda x: -counts[x]) # sort by counts
+    sorted_vocab = sorted(vocab_set, key=lambda x: counts[x], reverse=True) # sort by counts
+    sorted_vocab = [i for i in sorted_vocab if i not in stoplist]
 
-    if testing==1:
-        print("get_vocab[:10]:", sorted_vocab[:10])
+    if testing == 1:
+        print("\ntotal vocab size:", len(sorted_vocab), '\n')
+        print(sorted_vocab, '\n')
 
-    return(sorted_vocab)
+    sorted_vocab = sorted_vocab[:maxvocab-2]
+    vocab_dict = {k: v+1 for v, k in enumerate(sorted_vocab)}
+    vocab_dict['UNK'] = maxvocab-1
+    vocab_dict['PAD'] = 0
+    inv_vocab_dict = {v: k for k, v in vocab_dict.items()}
+    return vocab_dict, inv_vocab_dict
 
-# function to convert sents to (index) vectors
-# takes list : sents, int : max vocab
-# returns list of vectors (as lists)
-def vectorize_sents(sents, max_vocab, testing=0):
 
-    counter = 0
-    # get sorted vocab
-    vocab = get_vocab(sents, testing)
-    vectors = []
-    # iterate thru sents
-    if testing==1:
-        print("starting vectorize_sents()...")
-        print(len(sents),"sentences to vectorize...")
-    for sent in sents:
-        sent_vect = []
-        for word in sent:
-            idx = vocab.index(word) + 1 # reserve 0 for UNK / OOV
-            if idx < max_vocab: # in max_vocab range
-                sent_vect.append(idx)
-            else: # out of max_vocab range
-                sent_vect.append(0)
-        vectors.append(sent_vect)
-        counter += 1
-        if counter < 10:
-            print(sent_vect)
-        if counter % 10 == 0:
-            print("sentences vectorized:", counter)
-        if counter % 1000 == 0:
-            np_vector = np.array(vectors)
-            np.save('bak/sentvectors_.npy', np_vector)
-    if testing==1:
-        print("vectorize_sents[:10]:", vectors[:10])
-    print("saving final sent vectors...")
-    with open("bak/sentvectors.csv", "w", newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(vectors)
-    np_vector = np.array(vectors)
-    np.save('bak/sentvectors.npy', np_vector)
-    return(vectors, vocab)
-
-# function to convert sents to (index) vectors
+# function to convert sents to vectors
 # takes list : sents, list : vocab
 # returns list of vectors (as lists)
-def vectorize_novel_sents(sents, vocab, testing=0):
+def index_sents(sents, vocab, testing=0):
 
-    counter = 0
-    vectors = []
-    # iterate thru sents
     if testing==1:
         print("starting vectorize_sents()...")
-        print(len(sents),"sentences to vectorize...")
+    vectors = []
+
+    # iterate thru sents
     for sent in sents:
         sent_vect = []
-        for word in sent:
-            if word in vocab: # in max_vocab range
-                idx = vocab.index(word) + 1 # reserve 0 for UNK / OOV
+        sentlist = sent.split(' ')
+        for word in sentlist:
+            if word in vocab.keys():
+                idx = vocab[word]
                 sent_vect.append(idx)
-            else: # out of max_vocab range
-                sent_vect.append(0)
+            else: # out of max_vocab range or OOV
+                sent_vect.append(vocab['UNK'])
         vectors.append(sent_vect)
-        counter += 1
-        if counter < 10:
-            print(sent_vect)
-        if counter % 10 == 0:
-            print("sentences vectorized:", counter)
-    if testing==1:
-        print("vectorize_sents[:10]:", vectors[:10])
-    print("saving final sent vectors...")
-
     return(vectors)
 
-# # function to convert classes to one-hot vectors
-# takes list : classes
-# returns list of vectors (as lists)
-def vectorize_classes(classes, testing=0):
-    if testing==1:
-        print("starting vectorize_classes()...")
-    class_set = list(set(classes))
-    class_num = len(class_set)
-    vectors = []
-    # iterate thru classes
-    for item in classes:
-        class_vector = []
-        for z in range(len(class_set)):
-            class_vector.append(0)
-        idx = class_set.index(item)
-        class_vector[idx] = 1
-        vectors.append(class_vector)
-    if testing==1:
-        print("vectorize_classes[:10]:", vectors[:10])
-    return(vectors, class_set)
 
-# # function to convert novel input classes to one-hot vectors
-# takes list : classes, list : class set
-# returns list of vectors (as lists)
-def vectorize_novel_classes(classes, class_set, testing=0):
-    if testing==1:
-        print("starting vectorize_classes()...")
-    class_num = len(class_set)
-    vectors = []
-    # iterate thru classes
-    for item in classes:
-        class_vector = []
-        for z in range(len(class_set)):
-            class_vector.append(0)
-        if item in class_set:
-            idx = class_set.index(item)
-            class_vector[idx] = 1
-        vectors.append(class_vector)
+# function to split data based on indices
+def get_sublist(lst, indices):
+    result = []
+    for idx in indices:
+        result.append(lst[idx])
+    return result
 
-    return(vectors)
 
-# shuffles data
-# do this externally so both can use same train-test
-# takes len(sents) and trainsize
-# returns shuffled indices as list and stop idx
-def shuffle_data(leng, trainsize):
-    entries = []
-    for i in range(leng):
-        entries.append(i)
+# one-hot vectorize function
+# takes list of integer indices, max number of labels
+# https://stackoverflow.com/questions/38592324/one-hot-encoding-using-numpy
+def onehot_vectorize(lst, num):
 
-    # shuffle indices for randomization
-    shuffled = random.sample(entries, len(entries))
-    # stop size for train set
-    train_stop = int(len(shuffled)*trainsize)
-    return(shuffled, train_stop)
+    return np.eye(num)[lst]
 
-# function to randomize and test-train split for RNN
-# takes sent list, class list, shuffled indices, train stop idx
-# returns train sents, train cats, test sents, test cats, test sents, class set
-def get_test_train(sents, classes, shuffled, train_stop,
-                   trainsize=0.8, max_vocab=50000, testing=0):
 
-    # vocab = get_vocab(sents, testing=testing)
-    sent_vectors, vocab =  vectorize_sents(sents, max_vocab, testing=testing)
-    class_vectors, class_set = vectorize_classes(classes, testing=testing)
+# one-hot vectorize function
+# takes amtrix of integer indices, max number of labels
+def onehot_vectorize_matrix(matrix, num):
+    result = []
+    for vector in matrix:
+        a = one_hot(vector.tolist(), dtype='int', num_labels=num)
+        result.append(a)
+    # print("shape", np.shape(np.array(result)))
+    return np.array(result)
 
-    # get list entry ... list?
-    entries = []
-    for i in range(len(sent_vectors)):
-        entries.append(i)
 
-    train_X = []
-    train_y = []
-    test_X = []
-    test_y = []
-    train_set = []
-    train_gold = []
-    test_set = [] # test set sentences
-    test_gold = [] # test set gold classes
-    for j in range(len(shuffled)):
-        idx = shuffled[j] # get random index
-        if j < train_stop:
-            train_X.append(sent_vectors[idx])
-            train_y.append(class_vectors[idx])
-            train_set.append(sents[idx])
-            train_gold.append(classes[idx])
+# function to return lexicalized morphs from mecab
+# takes sentence as string
+# returns space-separated string of lexicalized morphemes
+def kkma_tokenize(sents):
+    from konlpy.tag import Kkma
+    kkma = Kkma()
+    lex_sents = []
+    # POS-tag and get lexical form from morphemes using KONLPY
+    for sent in sents:
+        lex_sents.append(' '.join(kkma.morphs(sent)))
+        if len(lex_sents) % 200 == 0:
+            print("kkma: done", len(lex_sents), "of", len(sents), "total")
+    return lex_sents
+
+
+# function to decode integer-indexed sequence to tokens
+# takes integer-indexed sentence, inverse vocab (int to word)
+def decode_seq(sent, vocab):
+    str = []
+    for intr in sent:
+        # print(intr)
+        str.append(vocab[int(intr)])
+    return(str)
+
+
+# datagenerator so no memory issues
+# takes batch size, filepaths to npy-saved data, max vocab, epoch size, class number
+# https://github.com/fchollet/keras/issues/2708
+# https://github.com/fchollet/keras/issues/1627
+def dataGenerator(batch_size,
+                  input_filepath='savedata/',
+                  xfile='X_train.npy',
+                  yfile='y_train.npy',
+                  vocabsize=VOCAB_SIZE,
+                  epochsize=300000,
+                  class_num=10):
+
+    i = 0
+    X = np.load(input_filepath + xfile)
+    y = np.load(input_filepath + yfile)
+
+    while True:
+        # add in data reading/augmenting code here
+        y_batch = onehot_vectorize(y[i:i + batch_size], class_num)
+        yield (X[i:i + batch_size], y_batch)
+        if i + batch_size >= epochsize:
+            i = 0
         else:
-            test_X.append(sent_vectors[idx])
-            test_y.append(class_vectors[idx])
-            test_set.append(sents[idx])
-            test_gold.append(classes[idx])
+            i += batch_size
 
-    return(train_X, train_y, test_X, test_y, train_set, test_set,
-           train_gold, test_gold, class_set, vocab)
 
-# function to randomize and test-train split for TFIDF
-# takes sent list, class list, shuffled indices, train stop idx
-# returns train sents, train cats, test sents, test cats, test sents, class set
-def get_text_test_train(sents, classes, shuffled, train_stop,
-                        trainsize=0.8, max_vocab=50000, testing=0):
+# normalize a list so total prob = ~1
+def normalize(list):
+    norm = [float(i) / sum(list) for i in list]
+    return(norm)
 
-    vocab = get_vocab(sents, testing=testing)
-    class_vectors, class_set = vectorize_classes(classes, testing=testing)
-    classes_idx = []
-    for vector in class_vectors:
-        classes_idx.append(vector.index(max(vector)))
+# get maximum normed value from list
+# (for """confidence""" value)
+def max_norm(list):
+    norm = normalize(list)
+    return(max(norm))
 
-    # get list entry ... list?
-    entries = []
-    for i in range(len(sents)):
-        entries.append(i)
-
-    train_X = []
-    train_y = []
-    test_X = []
-    test_y = []
-    train_set = []
-    train_gold = []
-    test_set = [] # test set sentences
-    test_gold = [] # test set gold classes
-    for j in range(len(shuffled)):
-        idx = shuffled[j] # get random index
-        if j < train_stop:
-            train_X.append(' '.join(sents[idx]))
-            train_y.append(classes_idx[idx])
-            train_set.append(sents[idx])
-            train_gold.append(classes[idx])
-        else:
-            test_X.append(' '.join(sents[idx]))
-            test_y.append(classes_idx[idx])
-            test_set.append(sents[idx])
-            test_gold.append(classes[idx])
-
-    return(train_X, train_y, test_X, test_y, train_set, test_set,
-           train_gold, test_gold, class_set, vocab)
-
-# function to get novel decode
-# takes sent list, class list, (trained model's) vocab
-# return
-def get_novel_decode(sents, vocab, classes, class_set):
-
-    sent_vects = vectorize_novel_sents(sents, vocab)
-    class_vects = vectorize_novel_classes(classes, class_set)
-
-    return(sent_vects, class_vects)
-
-def save_csv(list, filename):
-    with open(filename, "w", newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(list)
-    return
-
-def load_csv(filename):
-    with codecs.open(filename, "r", encoding='utf-8') as f:
-        reader = csv.reader(f)
-        data = list(list(rec) for rec in csv.reader(f, delimiter=','))
-    return(data)
-
-def save_txt(list, filename):
-    with open(filename, "w", newline='') as f:
-        for item in list:
-            f.write(item)
-            f.write('\n')
-    return
-
-def load_txt(filename):
-    data = []
-    with codecs.open(filename, "r", encoding='utf-8') as f:
-        for item in f:
-            data.append(item.strip('\n'))
-    return(data)

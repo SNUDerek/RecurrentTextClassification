@@ -3,52 +3,62 @@
 # https://gist.github.com/prinsherbert/92313f15fc814d6eed1e36ab4df1f92d
 # changed classification_report(), accuracy_score() with proper args
 
-import numpy, nltk
-import dataset, analysis
+import codecs, csv
+import numpy as np
+import nltk
+import dataset
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import precision_score, recall_score
+from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
+from config import sents_filename, classes_filename, save_path
 
 # fix random seed for reproducibility
 seed = 1337
-numpy.random.seed(seed)
+np.random.seed(seed)
 
-def classify_tfidf(X_train, y_train, X_test, y_test, test_set, test_gold, class_set, vocab_size):
 
-    # **********************************************
-    # CHANGE VARIABLES HERE!!!!!
-    # todo: add startup params instead of this mess
-    # **********************************************
-    # debugging stuff
-    checkdata = 0 # idiot check for data formatting
+# (article body) sentences as list of strings
+corpus_sents = []
+with codecs.open(sents_filename, 'rU', encoding='utf-8') as csvfile:
+    spamreader = csv.reader(csvfile, delimiter='\t')
+    for row in spamreader:
+        corpus_sents.append(' '.join(row))
 
-    # END PARAMETERS
-    # **********************************************
+# classes
+labels = []
+with codecs.open(classes_filename, 'rU', encoding='utf-8') as csvfile:
+    spamreader = csv.reader(csvfile, delimiter='\t')
+    for row in spamreader:
+        labels.append(' '.join(row))
 
-    print("TF-IDF baseline test")
+train_idx = np.load(save_path+'train_idx.npy')
+test_idx = np.load(save_path+'test_idx.npy')
 
-    # just to check if data is looking good
-    if checkdata != 0:
-        print("VISUAL DATA CHECK:")
-        print("X_train[:1]", X_train[:2])
-        print("y_train[:1]", y_train[:2])
-        print("X_test[:1] ", X_test[:2])
-        print("y_test[:1] ", y_test[:2])
-        print("len y_test ", len(y_test))
-        print('')
+X_train = [corpus_sents[i] for i in train_idx]
+y_train = [labels[i] for i in train_idx]
+X_test = [corpus_sents[i] for i in test_idx]
+y_test = [labels[i] for i in test_idx]
 
-    model = Pipeline([
-        ('tfidf', TfidfVectorizer(ngram_range=(1,2))),
-        ('log', LogisticRegression())
-    ])
+encoder = joblib.load(save_path+'labelencoder.pkl')
+y_train = encoder.transform(y_train)
+y_test = encoder.transform(y_test)
 
-    model.fit(X_train, y_train)
+print("TF-IDF baseline test")
 
-    # Final evaluation of the model
-    y_pred = model.predict(X_test)
-    print(classification_report(y_test, y_pred))
-    print("TF-IDF accuracy: %.2f%%" % (accuracy_score(y_test, y_pred)*100))
+model = Pipeline([
+    ('tfidf', TfidfVectorizer(ngram_range=(1,2))),
+    ('log', LogisticRegression())
+])
 
-    return(model)
+model.fit(X_train, y_train)
+
+# Final evaluation of the model
+y_pred = model.predict(X_test)
+print("TF-IDF precision :",precision_score(y_test, y_pred, average='macro'))
+print("TF-IDF recall    :", recall_score(y_test, y_pred, average='macro'))
+print("TF-IDF accuracy  : %.2f%%" % (accuracy_score(y_test, y_pred)*100))

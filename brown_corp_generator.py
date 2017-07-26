@@ -1,16 +1,18 @@
-import codecs, re
+import codecs, re, csv
 from nltk.corpus import brown
+from config import stoplist, sents_filename, classes_filename
 
 lower_lim = 8       # min size of input
 upper_lim = 100     # max size of input
 max_ex = 1000       # examples per genre
-max_clusters = 3    # sentences per example, default = 1
+max_clusters = 3    # sentences per example, default = 3
 
-# for sentence in brown.sents(categories=['religion'])[:100]:
-#     print(' '.join(sentence))
+sents = codecs.open(sents_filename, 'w', encoding='utf-8')
+classes = codecs.open(classes_filename, 'w', encoding='utf-8')
 
-sents = codecs.open('datasets/brown_sents.txt', 'w', encoding='utf-8')
-classes = codecs.open('datasets/brown_topics.txt', 'w', encoding='utf-8')
+sentwriter = csv.writer(sents)
+labelwriter = csv.writer(classes)
+
 '''
 choose some from the following genres:
 adventure
@@ -38,6 +40,7 @@ for topic in topics:
     good_count = 0 # for counting good sentences
     this_counter = 0
     this_cluster = ''
+
     for sentence in brown.sents(categories=[topic]):
 
         # check length first:
@@ -48,19 +51,17 @@ for topic in topics:
                 this_string = this_string.replace(shit, '')     # remove punctuation etc
             this_string = re.sub(r'\d', '#', this_string) # sub # for digits
             this_string = re.sub(r'[\s]+', ' ', this_string)
-
             if this_counter < max_clusters:
                 this_cluster += this_string
                 this_counter += 1
             else:
+                print(good_count, "sentence (clusters) for", topic)
                 good_count += 1
-                sents.write(this_cluster)
-                sents.write('\n')
-                classes.write(topic)
-                classes.write('\n')
+                sentwriter.writerow([this_cluster])
+                labelwriter.writerow([topic])
+                this_cluster = ''
                 this_counter = 0
 
-            print(good_count, "sentence (clusters) for", topic)
             if good_count > max_ex:
                 break
 

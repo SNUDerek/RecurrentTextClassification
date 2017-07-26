@@ -3,33 +3,62 @@
 ## CNN-RNN multiclass classification network
 dsh9470@snu.ac.kr
 
+
+## REQUIREMENTS:
+'numpy'
+`keras` 2.x
+`sklearn`
+`mlxtend` for one-hot encoding (can change to numpy, sklearn, keras, ...)
+`h5py` for saving in hdf5 format
+`nltk` for sample corpus generation, only
+
+
+## TO-DO:
+currently displaying results of trained model does not work
+
+
 ## HOW TO RUN:
 1. place your sentences and classes text files in the /datasets directory (use `brown_corp_generator.py` to generate toy data with NLTK)
-2. edit parameters in config.py
-3. run main.py
+2. edit parameters in config.py (especially CNN and DNN layers)
+3. run `rnn_model.py`, compare to `tfidf_model.py`
 4. profit! ...maybe
 
-## NOTES:
-NB: this is not designed for amazing efficiency, especially the preprocessing. `sklearn` preprocessing would help a lot.
+
+## SAMPLE:
+```
+TF-IDF baseline test
+TF-IDF precision : 0.551792873159
+TF-IDF recall    : 0.501596800651
+TF-IDF accuracy  : 63.97%
+
+RNN Accuracy: 38.82%
+```
+... oh well...
+
 
 ## FILES:
-`main.py` : main file, run to use
+`brown_corp_generator.py` : generate sample multiclass classification data using NLTK
 
 `config.py` : configuration file, edit before using
 
-`evaluate.py`: run to evaluate trained (saved) model on all data
+`dataset.py` : vectorizes sentences by frequency, creates one-hot classification vectors
+
+`evaluate.py`: run to evaluate trained (saved) model on all data (OLD!)
+
+`preprocessor.py` : integer-indexes and saves data for neural model
 
 `rnn_model.py` : CNN-RNN classifier, edit parameters before running
 
 `tfidf_model.py` : baseline comparison of TF-IDF classification
 
-`dataset.py` : vectorizes sentences by frequency, creates one-hot classification vectors
 
-`analysis.py` : (to-do) various tools for evaluation and analysis
+## NOTES
+if `onehot_vectorize` gives out of memory error, change `preprocessor` to save integer-indexed version (remove the `onehot_vectorize()` lines) and use `traingenerator` to one-hot encode by batch:
 
-`brown_corp_generator.py` : generate sample classification data using NLTK
-
-`loadmodel_test.py` : test code for loading saved models
+see:
+`dataGenerator` class in `dataset.py`
+https://github.com/fchollet/keras/issues/2708
+https://github.com/fchollet/keras/issues/1627
 
 
 ## DEFAULT DIRECTORIES:
@@ -46,14 +75,6 @@ NB: this is not designed for amazing efficiency, especially the preprocessing. `
 /temp_models : models saved at each epoch
 
 
-## TO-DO LIST:
-- swap out crappy vectorization for sklearn vectorizer?
-- add command line parameter functionality
-- tweak network architecture for better performance
-- add more analysis tools
-
-
-
 ## NOTES & NOTICES:
 - RNN modified from Jason Brownlee : "Sequence Classification with LSTM RNN in Python with Keras"
   http://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/
@@ -62,32 +83,6 @@ NB: this is not designed for amazing efficiency, especially the preprocessing. `
 - sentences vectorized according to word frequency (1 ~ max vocab), 0 for UNK/OOV tokens
 - classes as one-hot vectors, can accomodate as many as listed in class text file
 - loss function: https://jamesmccaffrey.wordpress.com/2013/11/05/why-you-should-use-cross-entropy-error-instead-of-classification-error-or-mean-squared-error-for-neural-network-classifier-training/
-
-
-## CHANGELOG:
-
-March 14:
-- added TFIDF classification for baseline comparison
-- added function... functionality for RNN, TFIDF (WIP)
-- added main.py to run both models to compare
-
-March 16:
-- RNN and TFIDF now use same shuffled data for training and testing
-- in-training model saving and early stops with keras callbacks
-- removed forcing to CPU
-- saving and loading tested working:
-  vectorized data saved to csv files
-  using loaded and saved model
-- tensorboard using keras callback (not working)
-
-March 17:
-- evaluate.py for full evaluation output to csv
-- saving and loading functionality expanded:
-- backup training input and gold files, and vocabulary, as well
-
-March 23:
-- saving vocabulary *actually* working
-- now all variables in config.py
 
 
 
