@@ -24,6 +24,7 @@ currently displaying results of trained model does not work
 
 
 ## SAMPLE:
+using sample data generated with `brown_corp_generator`
 ```
 TF-IDF baseline test
 TF-IDF precision : 0.551792873159
