@@ -57,7 +57,9 @@ if `onehot_vectorize` gives out of memory error, change `preprocessor` to save i
 
 see:
 `dataGenerator` class in `dataset.py`
+
 https://github.com/fchollet/keras/issues/2708
+
 https://github.com/fchollet/keras/issues/1627
 
 
