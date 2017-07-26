@@ -5,12 +5,11 @@ dsh9470@snu.ac.kr
 
 
 ## REQUIREMENTS:
-'numpy'
-`keras` 2.x
-`sklearn`
-`mlxtend` for one-hot encoding (can change to numpy, sklearn, keras, ...)
-`h5py` for saving in hdf5 format
-`nltk` for sample corpus generation, only
+1. `numpy`
+2. `keras` 2.x
+3. `sklearn`
+4. `h5py` for saving in hdf5 format
+5. `nltk` for sample corpus generation, only
 
 
 ## TO-DO:
